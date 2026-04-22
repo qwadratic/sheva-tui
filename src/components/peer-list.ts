@@ -23,8 +23,9 @@ export class PeerList implements Component {
 
 		// Peers section
 		const peersActive = this.focused && this.section === "peers";
+		const peersHint = peersActive && peers.length > 0 ? `${gray("[enter:open chat]")} ` : "";
 		const peersTitle = peersActive ? cyan(bold("▸ Peers")) : bold("Peers");
-		lines.push(truncateToWidth(` ${peersTitle} (${peers.length})`, width));
+		lines.push(truncateToWidth(` ${peersHint}${peersTitle} (${peers.length})`, width));
 		if (peers.length === 0) {
 			lines.push(truncateToWidth(gray("  No peers yet"), width));
 		} else {
@@ -60,8 +61,9 @@ export class PeerList implements Component {
 		// Pending section
 		lines.push("");
 		const pendingActive = this.focused && this.section === "pending";
+		const pendingHint = pendingActive && pending.length > 0 ? `${gray("[a:approve/deny]")} ` : "";
 		const pendingTitle = pendingActive ? cyan(bold("▸ Pending")) : bold("Pending");
-		lines.push(truncateToWidth(` ${pendingTitle} (${pending.length})`, width));
+		lines.push(truncateToWidth(` ${pendingHint}${pendingTitle} (${pending.length})`, width));
 		if (pending.length === 0) {
 			lines.push(truncateToWidth(gray("  ✓ None"), width));
 		} else {
