@@ -19,8 +19,8 @@ export class State {
 
 	handleEvent(msg: WsEvent): void {
 		if (msg.type === "chat") {
-			this.feed.unshift({ peer: msg.peer, ts: msg.ts, text: msg.text, direction: msg.direction });
-			if (this.feed.length > 200) this.feed.pop();
+			this.feed.push({ peer: msg.peer, ts: msg.ts, text: msg.text, direction: msg.direction });
+			if (this.feed.length > 200) this.feed.shift();
 			if (msg.peer === this.chatPeer) {
 				this.chatMessages.push({ ts: msg.ts, direction: msg.direction, text: msg.text, flagged: msg.flagged });
 			}
@@ -85,8 +85,8 @@ export class State {
 				}
 			}
 		}
-		this.feed.sort((a, b) => (b.ts || "").localeCompare(a.ts || ""));
-		this.feed = this.feed.slice(0, 200);
+		this.feed.sort((a, b) => (a.ts || "").localeCompare(b.ts || ""));
+		this.feed = this.feed.slice(-200);
 		this.onChange();
 	}
 

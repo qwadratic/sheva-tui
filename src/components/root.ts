@@ -12,7 +12,7 @@ import { PeerList } from "./peer-list.js";
 import { PromptOverlay } from "./prompt-overlay.js";
 import { StatusBar } from "./status-bar.js";
 
-type FocusTarget = "peers" | "chat";
+type FocusTarget = "left" | "chat";
 
 export class Root implements Component {
 	private header: Header;
@@ -21,7 +21,7 @@ export class Root implements Component {
 	private chatWindow: ChatWindow;
 	private chatInput: Input;
 	private statusBar: StatusBar;
-	private focusTarget: FocusTarget = "peers";
+	private focusTarget: FocusTarget = "left";
 	private activeOverlay: Component | null = null;
 	private requestRender: () => void;
 	private stopTui: () => void;
@@ -49,12 +49,22 @@ export class Root implements Component {
 			});
 		};
 
+		this.peerList.onApprovePending = (idx) => {
+			const req = this.state.pending[idx];
+			if (req) this.showApproval(req);
+		};
+
 		this.chatInput.onSubmit = (text: string) => {
 			if (text?.trim()) {
 				state.sendMessage(text.trim());
 				this.chatInput.setValue("");
 			}
 		};
+	}
+
+	private setStatus(msg: string): void {
+		this.statusBar.setTempStatus(msg, () => this.requestRender());
+		this.requestRender();
 	}
 
 	invalidate(): void {
@@ -69,7 +79,6 @@ export class Root implements Component {
 
 	render(width: number): string[] {
 		const lines: string[] = [];
-
 		const totalRows = this.terminal.rows;
 
 		// Header
@@ -80,27 +89,32 @@ export class Root implements Component {
 		const rightW = width - leftW - 1;
 
 		// Adjust max lines based on terminal height
-		const headerRows = 3; // header lines
+		const headerRows = 3;
 		const statusRows = 1;
 		const contentRows = totalRows - headerRows - statusRows;
 		this.feed.maxLines = Math.max(5, Math.floor(contentRows * 0.45));
 		this.chatWindow.maxLines = Math.max(5, Math.floor(contentRows * 0.35));
 
 		// Pass focus state to children
-		this.peerList.focused = this.focusTarget === "peers";
+		this.peerList.focused = this.focusTarget === "left";
 
 		const leftLines = this.peerList.render(leftW);
 		const rightFeed = this.feed.render(rightW);
 		const rightChat = this.chatWindow.render(rightW);
-		const inputLines = this.chatInput.render(rightW - 4);
-		const chatFocused = this.focusTarget === "chat";
-		const prompt = chatFocused ? cyan("> ") : gray("> ");
-		const inputRendered = inputLines.map((l) => truncateToWidth(` ${prompt}${l}`, rightW));
+
+		// Chat input — only show if chat is open
+		let inputRendered: string[] = [];
+		if (this.state.chatPeer) {
+			const inputLines = this.chatInput.render(rightW - 4);
+			const chatFocused = this.focusTarget === "chat";
+			const prompt = chatFocused ? cyan("> ") : gray("> ");
+			inputRendered = inputLines.map((l) => truncateToWidth(` ${prompt}${l}`, rightW));
+		}
+
 		const rightLines = [...rightFeed, ...rightChat, ...inputRendered];
 
 		// Merge columns — fill to terminal height
-		const bodyRows = contentRows;
-		const maxRows = Math.max(leftLines.length, rightLines.length, bodyRows);
+		const maxRows = Math.max(leftLines.length, rightLines.length, contentRows);
 		for (let i = 0; i < maxRows; i++) {
 			const left = i < leftLines.length ? leftLines[i] : "";
 			const right = i < rightLines.length ? rightLines[i] : "";
@@ -139,14 +153,27 @@ export class Root implements Component {
 			process.exit(0);
 		}
 
-		// Tab to switch focus
+		// Tab: cycle focus — left(peers) → left(pending if any) → chat(if open) → left(peers)
 		if (matchesKey(data, "tab")) {
-			this.focusTarget = this.focusTarget === "peers" ? "chat" : "peers";
+			if (this.focusTarget === "left") {
+				const stayed = this.peerList.cycleSection();
+				if (!stayed) {
+					// Left panel exhausted sections — move to chat if open
+					if (this.state.chatPeer) {
+						this.focusTarget = "chat";
+					}
+					// else stay on peers
+				}
+			} else {
+				// From chat → back to peers
+				this.focusTarget = "left";
+				this.peerList.enterFromChat();
+			}
 			this.requestRender();
 			return;
 		}
 
-		// Global shortcuts (only when not typing)
+		// Global shortcuts (only when not typing in chat)
 		if (this.focusTarget !== "chat") {
 			if (data === "c") {
 				this.showConnectPrompt();
@@ -158,8 +185,7 @@ export class Root implements Component {
 			}
 			if (data === "d") {
 				this.state.toggleDiscoverable().then(() => {
-					this.state.statusMsg = `Discoverable: ${this.state.discoverable ? "ON" : "OFF"}`;
-					this.requestRender();
+					this.setStatus(`Discoverable: ${this.state.discoverable ? "ON" : "OFF"}`);
 				});
 				return;
 			}
@@ -175,14 +201,32 @@ export class Root implements Component {
 				this.showNodeUrlPrompt();
 				return;
 			}
+			if (data === "x") {
+				this.closeChat();
+				return;
+			}
+		}
+
+		// 'x' works from chat focus too
+		if (this.focusTarget === "chat" && data === "x" && this.chatInput.getValue() === "") {
+			this.closeChat();
+			return;
 		}
 
 		// Route to focused component
-		if (this.focusTarget === "peers") {
+		if (this.focusTarget === "left") {
 			this.peerList.handleInput(data);
 		} else {
 			this.chatInput.handleInput(data);
 		}
+		this.requestRender();
+	}
+
+	private closeChat(): void {
+		this.state.chatPeer = null;
+		this.state.chatMessages = [];
+		this.focusTarget = "left";
+		this.peerList.enterFromChat();
 		this.requestRender();
 	}
 
@@ -191,7 +235,7 @@ export class Root implements Component {
 			this.activeOverlay = null;
 			if (val) {
 				const ok = await this.state.connectPeer(val);
-				this.state.statusMsg = ok ? `Connecting to ${val.slice(0, 12)}…` : "Failed to connect";
+				this.setStatus(ok ? `Connecting to ${val.slice(0, 12)}…` : "Failed to connect");
 			}
 			this.requestRender();
 		});
@@ -203,7 +247,7 @@ export class Root implements Component {
 			this.activeOverlay = null;
 			if (val) {
 				const ok = await this.state.joinRoom(val);
-				this.state.statusMsg = ok ? `Joined room "${val}"` : "Failed to join room";
+				this.setStatus(ok ? `Joined room "${val}"` : "Failed to join room");
 			}
 			this.requestRender();
 		});
@@ -215,7 +259,7 @@ export class Root implements Component {
 			this.activeOverlay = null;
 			if (action) {
 				await this.state.decide(req.id, action);
-				this.state.statusMsg = `${req.peer.slice(0, 12)}: ${action}`;
+				this.setStatus(`${req.peer.slice(0, 12)}: ${action}`);
 			}
 			this.requestRender();
 		});
@@ -235,7 +279,7 @@ export class Root implements Component {
 		this.activeOverlay = new PromptOverlay(`Node URL (current: ${current})`, (val) => {
 			this.activeOverlay = null;
 			if (val) {
-				this.state.statusMsg = `Connecting to ${val}…`;
+				this.setStatus(`Connecting to ${val}…`);
 				this.rpcClient.reconnect(val);
 			}
 			this.requestRender();

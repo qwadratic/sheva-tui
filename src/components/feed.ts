@@ -14,11 +14,13 @@ export class Feed implements Component {
 	render(width: number): string[] {
 		const { feed } = this.state;
 		const lines: string[] = [truncateToWidth(` ${bold("Feed")} (${feed.length})`, width)];
-		const slice = feed.slice(0, this.maxLines);
 
-		if (slice.length === 0) {
+		if (feed.length === 0) {
 			lines.push(truncateToWidth(gray("  No events yet"), width));
 		} else {
+			// Show last N items, oldest first (top→bottom = old→new)
+			const start = Math.max(0, feed.length - this.maxLines);
+			const slice = feed.slice(start);
 			for (const f of slice) {
 				const dir = f.direction === "in" ? cyan("◀ IN ") : yellow("▶ OUT");
 				const ts = (f.ts || "").slice(11, 19);

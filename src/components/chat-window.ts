@@ -15,7 +15,7 @@ export class ChatWindow implements Component {
 		const { chatPeer, chatMessages } = this.state;
 		const sep = gray("─".repeat(width));
 		const label = chatPeer
-			? ` ${bold(magenta("Chat"))} with ${cyan(State.shortPk(chatPeer))}`
+			? ` ${bold(magenta("Chat"))} with ${cyan(State.shortPk(chatPeer))} ${gray("(x to close)")}`
 			: ` ${bold(magenta("Chat"))} — select a peer`;
 		const lines: string[] = [sep, truncateToWidth(label, width)];
 
@@ -25,7 +25,9 @@ export class ChatWindow implements Component {
 			return lines;
 		}
 
-		const msgs = chatMessages.slice(-this.maxLines);
+		// Show last N messages, oldest first (top→bottom = old→new)
+		const start = Math.max(0, chatMessages.length - this.maxLines);
+		const msgs = chatMessages.slice(start);
 		for (const m of msgs) {
 			const dir = m.direction === "in" ? cyan("◀ ") : yellow("▶ ");
 			const ts = (m.ts || "").slice(11, 19);
