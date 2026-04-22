@@ -77,24 +77,6 @@ export class PeerList implements Component {
 		return lines;
 	}
 
-	/** Cycle to next section. Returns false if we should leave this component. */
-	cycleSection(): boolean {
-		const hasPending = this.state.pending.length > 0;
-		if (this.section === "peers" && hasPending) {
-			this.section = "pending";
-			this.pendingSelected = 0;
-			return true;
-		}
-		// Leave component — caller should move focus to chat
-		this.section = "peers";
-		return false;
-	}
-
-	/** Move focus back into this component from chat */
-	enterFromChat(): void {
-		this.section = "peers";
-	}
-
 	handleInput(data: string): void {
 		if (this.section === "peers") {
 			this.handlePeersInput(data);

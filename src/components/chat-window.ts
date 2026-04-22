@@ -6,6 +6,7 @@ import { State } from "../state.js";
 
 export class ChatWindow implements Component {
 	maxLines = 15;
+	focused = false;
 
 	constructor(private state: StateType) {}
 
@@ -14,9 +15,10 @@ export class ChatWindow implements Component {
 	render(width: number): string[] {
 		const { chatPeer, chatMessages } = this.state;
 		const sep = gray("─".repeat(width));
+		const chatTitle = this.focused ? cyan(bold("▸ Chat")) : bold(magenta("Chat"));
 		const label = chatPeer
-			? ` ${bold(magenta("Chat"))} with ${cyan(State.shortPk(chatPeer))} ${gray("(x to close)")}`
-			: ` ${bold(magenta("Chat"))} — select a peer`;
+			? ` ${chatTitle} with ${cyan(State.shortPk(chatPeer))} ${gray("(x to close)")}`
+			: ` ${chatTitle} — select a peer`;
 		const lines: string[] = [sep, truncateToWidth(label, width)];
 
 		if (!chatPeer) {

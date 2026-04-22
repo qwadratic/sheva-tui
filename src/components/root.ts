@@ -12,7 +12,10 @@ import { PeerList } from "./peer-list.js";
 import { PromptOverlay } from "./prompt-overlay.js";
 import { StatusBar } from "./status-bar.js";
 
-type FocusTarget = "left" | "chat";
+/**
+ * Focus cycle: peers → pending (if any) → feed → chat (if open) → peers
+ */
+type FocusTarget = "peers" | "pending" | "feed" | "chat";
 
 export class Root implements Component {
 	private header: Header;
@@ -21,7 +24,7 @@ export class Root implements Component {
 	private chatWindow: ChatWindow;
 	private chatInput: Input;
 	private statusBar: StatusBar;
-	private focusTarget: FocusTarget = "left";
+	private focusTarget: FocusTarget = "peers";
 	private activeOverlay: Component | null = null;
 	private requestRender: () => void;
 	private stopTui: () => void;
@@ -45,6 +48,7 @@ export class Root implements Component {
 		this.peerList.onSelectPeer = (pk) => {
 			state.openChat(pk).then(() => {
 				this.focusTarget = "chat";
+				this.syncFocus();
 				this.requestRender();
 			});
 		};
@@ -65,6 +69,45 @@ export class Root implements Component {
 	setStatus(msg: string): void {
 		this.statusBar.setTempStatus(msg, () => this.requestRender());
 		this.requestRender();
+	}
+
+	private syncFocus(): void {
+		this.peerList.focused = this.focusTarget === "peers" || this.focusTarget === "pending";
+		this.peerList.section = this.focusTarget === "pending" ? "pending" : "peers";
+		this.feed.focused = this.focusTarget === "feed";
+		this.chatWindow.focused = this.focusTarget === "chat";
+	}
+
+	private nextFocus(): void {
+		const hasPending = this.state.pending.length > 0;
+		const hasChat = !!this.state.chatPeer;
+
+		switch (this.focusTarget) {
+			case "peers":
+				if (hasPending) {
+					this.focusTarget = "pending";
+					this.peerList.pendingSelected = 0;
+				} else {
+					this.focusTarget = "feed";
+					this.feed.resetScroll();
+				}
+				break;
+			case "pending":
+				this.focusTarget = "feed";
+				this.feed.resetScroll();
+				break;
+			case "feed":
+				if (hasChat) {
+					this.focusTarget = "chat";
+				} else {
+					this.focusTarget = "peers";
+				}
+				break;
+			case "chat":
+				this.focusTarget = "peers";
+				break;
+		}
+		this.syncFocus();
 	}
 
 	invalidate(): void {
@@ -95,8 +138,8 @@ export class Root implements Component {
 		this.feed.maxLines = Math.max(5, Math.floor(contentRows * 0.45));
 		this.chatWindow.maxLines = Math.max(5, Math.floor(contentRows * 0.35));
 
-		// Pass focus state to children
-		this.peerList.focused = this.focusTarget === "left";
+		// Sync focus state
+		this.syncFocus();
 
 		const leftLines = this.peerList.render(leftW);
 		const rightFeed = this.feed.render(rightW);
@@ -123,7 +166,7 @@ export class Root implements Component {
 			lines.push(truncateToWidth(`${padded}${gray("│")}${right}`, width));
 		}
 
-		// Status bar (always last line)
+		// Status bar
 		lines.push(...this.statusBar.render(width));
 
 		// Overlay
@@ -153,22 +196,9 @@ export class Root implements Component {
 			process.exit(0);
 		}
 
-		// Tab: cycle focus — left(peers) → left(pending if any) → chat(if open) → left(peers)
+		// Tab: cycle focus
 		if (matchesKey(data, "tab")) {
-			if (this.focusTarget === "left") {
-				const stayed = this.peerList.cycleSection();
-				if (!stayed) {
-					// Left panel exhausted sections — move to chat if open
-					if (this.state.chatPeer) {
-						this.focusTarget = "chat";
-					}
-					// else stay on peers
-				}
-			} else {
-				// From chat → back to peers
-				this.focusTarget = "left";
-				this.peerList.enterFromChat();
-			}
+			this.nextFocus();
 			this.requestRender();
 			return;
 		}
@@ -190,7 +220,9 @@ export class Root implements Component {
 				return;
 			}
 			if (data === "a" && this.state.pending.length > 0) {
-				this.showApproval(this.state.pending[0]);
+				const idx = this.focusTarget === "pending" ? this.peerList.pendingSelected : 0;
+				const req = this.state.pending[idx];
+				if (req) this.showApproval(req);
 				return;
 			}
 			if (data === "h") {
@@ -207,17 +239,24 @@ export class Root implements Component {
 			}
 		}
 
-		// 'x' works from chat focus too
+		// 'x' works from chat focus too (when input is empty)
 		if (this.focusTarget === "chat" && data === "x" && this.chatInput.getValue() === "") {
 			this.closeChat();
 			return;
 		}
 
 		// Route to focused component
-		if (this.focusTarget === "left") {
-			this.peerList.handleInput(data);
-		} else {
-			this.chatInput.handleInput(data);
+		switch (this.focusTarget) {
+			case "peers":
+			case "pending":
+				this.peerList.handleInput(data);
+				break;
+			case "feed":
+				this.feed.handleInput(data);
+				break;
+			case "chat":
+				this.chatInput.handleInput(data);
+				break;
 		}
 		this.requestRender();
 	}
@@ -225,8 +264,8 @@ export class Root implements Component {
 	private closeChat(): void {
 		this.state.chatPeer = null;
 		this.state.chatMessages = [];
-		this.focusTarget = "left";
-		this.peerList.enterFromChat();
+		this.focusTarget = "peers";
+		this.syncFocus();
 		this.requestRender();
 	}
 
