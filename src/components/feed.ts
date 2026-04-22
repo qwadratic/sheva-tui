@@ -20,10 +20,9 @@ export class Feed implements Component {
 
 	render(width: number): string[] {
 		const { feed } = this.state;
-		const titleColor = this.focused ? cyan : (t: string) => t;
-		const title = this.focused ? titleColor(bold("▸ Feed")) : bold("Feed");
-		const scrollHint = this.canScroll && this.focused ? gray(" ↑↓") : "";
-		const lines: string[] = [truncateToWidth(` ${title} (${feed.length})${scrollHint}`, width)];
+		const scrollHint = this.canScroll && this.focused ? `${gray("[↑↓:scroll]")} ` : "";
+		const title = this.focused ? cyan(bold("▸ Feed")) : bold("Feed");
+		const lines: string[] = [truncateToWidth(` ${scrollHint}${title} (${feed.length})`, width)];
 
 		if (feed.length === 0) {
 			lines.push(truncateToWidth(gray("  No events yet"), width));

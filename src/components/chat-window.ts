@@ -15,9 +15,10 @@ export class ChatWindow implements Component {
 	render(width: number): string[] {
 		const { chatPeer, chatMessages } = this.state;
 		const sep = gray("─".repeat(width));
+		const closeHint = chatPeer && this.focused ? `${gray("[x:close]")} ` : "";
 		const chatTitle = this.focused ? cyan(bold("▸ Chat")) : bold(magenta("Chat"));
 		const label = chatPeer
-			? ` ${chatTitle} with ${cyan(State.shortPk(chatPeer))} ${gray("(x to close)")}`
+			? ` ${closeHint}${chatTitle} with ${cyan(State.shortPk(chatPeer))}`
 			: ` ${chatTitle} — select a peer`;
 		const lines: string[] = [sep, truncateToWidth(label, width)];
 
