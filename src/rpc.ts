@@ -39,6 +39,22 @@ export class ShevaRpc {
 		return this.ws?.readyState === WebSocket.OPEN;
 	}
 
+	getUrl(): string {
+		return this.url;
+	}
+
+	reconnect(url: string): void {
+		this.url = url;
+		if (this.ws) {
+			try {
+				this.ws.removeAllListeners();
+				this.ws.close();
+			} catch {}
+		}
+		this.ws = null;
+		this.connect();
+	}
+
 	connect(): void {
 		this.ws = new WebSocket(this.url, { headers: { origin: this.origin } });
 		this.ws.on("open", () => this.onConnect());

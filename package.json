@@ -1,6 +1,6 @@
 {
 	"name": "sheva-tui",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"description": "Terminal UI for sheva-node — P2P mesh network observer",
 	"type": "module",
 	"bin": {

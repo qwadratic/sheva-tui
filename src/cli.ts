@@ -37,7 +37,7 @@ const state = new State(rpcClient, () => {
 	tui.requestRender();
 });
 
-const root = new Root(state, terminal, () => tui.requestRender(), shutdown);
+const root = new Root(state, terminal, rpcClient, () => tui.requestRender(), shutdown);
 tui.addChild(root);
 tui.setFocus(root);
 tui.start();

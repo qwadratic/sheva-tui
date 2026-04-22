@@ -9,7 +9,7 @@ export class StatusBar implements Component {
 	invalidate(): void {}
 
 	render(width: number): string[] {
-		const keys = "tab:focus  enter:select  c:connect  r:room  d:discoverable  a:approve  q:quit";
+		const keys = "tab:focus  enter:select  c:connect  r:room  d:discoverable  a:approve  n:node  h:help  q:quit";
 		return [truncateToWidth(gray(` ${this.state.statusMsg}  │  ${keys}`), width)];
 	}
 }

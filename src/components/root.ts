@@ -1,11 +1,13 @@
 import type { Component, Terminal } from "@mariozechner/pi-tui";
 import { Input, Key, matchesKey, truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
 import { cyan, gray } from "../ansi.js";
+import type { ShevaRpc } from "../rpc.js";
 import type { State } from "../state.js";
 import { ApprovalOverlay } from "./approval-overlay.js";
 import { ChatWindow } from "./chat-window.js";
 import { Feed } from "./feed.js";
 import { Header } from "./header.js";
+import { HelpOverlay } from "./help-overlay.js";
 import { PeerList } from "./peer-list.js";
 import { PromptOverlay } from "./prompt-overlay.js";
 import { StatusBar } from "./status-bar.js";
@@ -27,6 +29,7 @@ export class Root implements Component {
 	constructor(
 		private state: State,
 		private terminal: Terminal,
+		private rpcClient: ShevaRpc,
 		requestRender: () => void,
 		stopTui: () => void,
 	) {
@@ -164,6 +167,14 @@ export class Root implements Component {
 				this.showApproval(this.state.pending[0]);
 				return;
 			}
+			if (data === "h") {
+				this.showHelp();
+				return;
+			}
+			if (data === "n") {
+				this.showNodeUrlPrompt();
+				return;
+			}
 		}
 
 		// Route to focused component
@@ -205,6 +216,27 @@ export class Root implements Component {
 			if (action) {
 				await this.state.decide(req.id, action);
 				this.state.statusMsg = `${req.peer.slice(0, 12)}: ${action}`;
+			}
+			this.requestRender();
+		});
+		this.requestRender();
+	}
+
+	private showHelp(): void {
+		this.activeOverlay = new HelpOverlay(() => {
+			this.activeOverlay = null;
+			this.requestRender();
+		});
+		this.requestRender();
+	}
+
+	private showNodeUrlPrompt(): void {
+		const current = this.rpcClient.getUrl();
+		this.activeOverlay = new PromptOverlay(`Node URL (current: ${current})`, (val) => {
+			this.activeOverlay = null;
+			if (val) {
+				this.state.statusMsg = `Connecting to ${val}…`;
+				this.rpcClient.reconnect(val);
 			}
 			this.requestRender();
 		});
