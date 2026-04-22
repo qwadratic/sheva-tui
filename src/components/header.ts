@@ -21,9 +21,9 @@ export class Header implements Component {
 		const pOn = s.peers.filter((p) => p.online).length;
 		const line2 = truncateToWidth(
 			` Peers: ${green(String(pOn))}/${s.peers.length}  ` +
-				`Rooms: ${magenta(String(s.rooms.length))} [${s.rooms.join(", ") || "none"}]  ` +
+				`Rooms: ${magenta(String(s.rooms.length))}  ` +
 				`Pending: ${s.pending.length > 0 ? red(String(s.pending.length)) : "0"}  ` +
-				`Disc: ${s.discoverable ? green("ON") : "OFF"}`,
+				`Discoverable: ${s.discoverable ? green("ON") : "OFF"}`,
 			width,
 		);
 		return [line1, line2, gray("─".repeat(width))];

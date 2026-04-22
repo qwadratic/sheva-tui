@@ -1,6 +1,6 @@
 import type { Component } from "@mariozechner/pi-tui";
 import { Key, matchesKey, truncateToWidth } from "@mariozechner/pi-tui";
-import { bgBlue, bold, cyan, gray, green, red, yellow } from "../ansi.js";
+import { bgBlue, bold, cyan, gray, green, magenta, red, yellow } from "../ansi.js";
 import { State } from "../state.js";
 
 export class PeerList implements Component {
@@ -35,6 +35,16 @@ export class PeerList implements Component {
 				const prefix = i === this.selected && this.focused ? bgBlue(">") : i === this.selected ? ">" : " ";
 				const nick = i === this.selected ? bold(p.nick) : p.nick;
 				lines.push(truncateToWidth(`${prefix} ${dot} ${nick} ${trust}`, width));
+			}
+		}
+
+		lines.push("");
+		lines.push(truncateToWidth(` ${bold("Rooms")} (${this.state.rooms.length})`, width));
+		if (this.state.rooms.length === 0) {
+			lines.push(truncateToWidth(gray("  No rooms"), width));
+		} else {
+			for (const r of this.state.rooms) {
+				lines.push(truncateToWidth(`  ${magenta("#")} ${r}`, width));
 			}
 		}
 
