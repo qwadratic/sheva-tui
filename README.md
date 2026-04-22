@@ -14,11 +14,14 @@ npx sheva-node start
 npx sheva-tui
 ```
 
-Or connect to a custom address:
+Connect to a remote node:
 
 ```bash
 npx sheva-tui ws://192.168.1.10:4200
+npx sheva-tui ws://my-server.example.com:4200
 ```
+
+The argument is the WebSocket URL of any running sheva-node (default: `ws://127.0.0.1:4200`).
 
 ## Features
 
@@ -40,7 +43,7 @@ npx sheva-tui ws://192.168.1.10:4200
 | `r` | Join a room (shared code) |
 | `d` | Toggle discoverable mode |
 | `a` | Approve first pending request |
-| `R` | Refresh all data |
+
 | `q` / `Ctrl-C` | Quit |
 
 ## Layout

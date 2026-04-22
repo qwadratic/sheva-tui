@@ -67,6 +67,8 @@ export class Root implements Component {
 	render(width: number): string[] {
 		const lines: string[] = [];
 
+		const totalRows = this.terminal.rows;
+
 		// Header
 		lines.push(...this.header.render(width));
 
@@ -75,7 +77,9 @@ export class Root implements Component {
 		const rightW = width - leftW - 1;
 
 		// Adjust max lines based on terminal height
-		const contentRows = this.terminal.rows - 6; // header + status
+		const headerRows = 3; // header lines
+		const statusRows = 1;
+		const contentRows = totalRows - headerRows - statusRows;
 		this.feed.maxLines = Math.max(5, Math.floor(contentRows * 0.45));
 		this.chatWindow.maxLines = Math.max(5, Math.floor(contentRows * 0.35));
 
@@ -91,8 +95,9 @@ export class Root implements Component {
 		const inputRendered = inputLines.map((l) => truncateToWidth(` ${prompt}${l}`, rightW));
 		const rightLines = [...rightFeed, ...rightChat, ...inputRendered];
 
-		// Merge columns
-		const maxRows = Math.max(leftLines.length, rightLines.length);
+		// Merge columns — fill to terminal height
+		const bodyRows = contentRows;
+		const maxRows = Math.max(leftLines.length, rightLines.length, bodyRows);
 		for (let i = 0; i < maxRows; i++) {
 			const left = i < leftLines.length ? leftLines[i] : "";
 			const right = i < rightLines.length ? rightLines[i] : "";
@@ -101,7 +106,7 @@ export class Root implements Component {
 			lines.push(truncateToWidth(`${padded}${gray("│")}${right}`, width));
 		}
 
-		// Status bar
+		// Status bar (always last line)
 		lines.push(...this.statusBar.render(width));
 
 		// Overlay
@@ -155,10 +160,6 @@ export class Root implements Component {
 				});
 				return;
 			}
-			if (data === "R") {
-				this.refreshAll();
-				return;
-			}
 			if (data === "a" && this.state.pending.length > 0) {
 				this.showApproval(this.state.pending[0]);
 				return;
@@ -207,14 +208,6 @@ export class Root implements Component {
 			}
 			this.requestRender();
 		});
-		this.requestRender();
-	}
-
-	private async refreshAll(): Promise<void> {
-		this.state.statusMsg = "Refreshing…";
-		this.requestRender();
-		await this.state.boot();
-		this.state.statusMsg = "Refreshed";
 		this.requestRender();
 	}
 }

@@ -43,10 +43,17 @@ tui.setFocus(root);
 tui.start();
 tui.requestRender();
 
-// Periodic uptime refresh
+// Autorefresh: uptime every 30s, peers/rooms every 10s
 setInterval(() => {
 	if (rpcClient.connected) state.refreshUptime();
 }, 30_000);
+
+setInterval(() => {
+	if (rpcClient.connected) {
+		state.refreshPeers();
+		state.refreshRooms();
+	}
+}, 10_000);
 
 // Clean exit on signals
 process.on("SIGINT", shutdown);
