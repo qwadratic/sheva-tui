@@ -90,7 +90,7 @@ export class Root implements Component {
 
 		// Adjust max lines based on terminal height
 		const headerRows = 3;
-		const statusRows = 1;
+		const statusRows = 2;
 		const contentRows = totalRows - headerRows - statusRows;
 		this.feed.maxLines = Math.max(5, Math.floor(contentRows * 0.45));
 		this.chatWindow.maxLines = Math.max(5, Math.floor(contentRows * 0.35));

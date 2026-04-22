@@ -1,5 +1,5 @@
 import type { Component } from "@mariozechner/pi-tui";
-import { truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
+import { truncateToWidth } from "@mariozechner/pi-tui";
 import { gray } from "../ansi.js";
 import type { State } from "../state.js";
 
@@ -22,19 +22,12 @@ export class StatusBar implements Component {
 	}
 
 	render(width: number): string[] {
-		const keys = "tab:focus  enter:select  c:connect  r:room  d:disc  a:approve  x:close  n:node  h:help  q:quit";
+		const keys = "tab:focus  enter:select  c:connect  r:room  d:disc  a:approve  n:node  h:help  q:quit";
 		const status = this.state.statusMsg;
+		const hrLine = gray("─".repeat(width));
 		if (!status) {
-			return [truncateToWidth(gray(` ${keys}`), width)];
+			return [hrLine, truncateToWidth(gray(` ${keys}`), width)];
 		}
-		const sep = "  │  ";
-		const statusW = visibleWidth(status);
-		const keysW = visibleWidth(keys);
-		// If it all fits on one line, show it
-		if (statusW + keysW + visibleWidth(sep) + 2 <= width) {
-			return [truncateToWidth(gray(` ${status}${sep}${keys}`), width)];
-		}
-		// Otherwise just show status (truncated) + abbreviated keys
-		return [truncateToWidth(gray(` ${status}${sep}h:help  q:quit`), width)];
+		return [hrLine, truncateToWidth(gray(` ${status}  │  h:help  q:quit`), width)];
 	}
 }
