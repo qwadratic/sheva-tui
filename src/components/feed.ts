@@ -27,7 +27,6 @@ export class Feed implements Component {
 		if (feed.length === 0) {
 			lines.push(truncateToWidth(gray("  No events yet"), width));
 		} else {
-			// Clamp scroll offset
 			const maxOffset = Math.max(0, feed.length - this.maxLines);
 			this.scrollOffset = Math.min(this.scrollOffset, maxOffset);
 			const end = feed.length - this.scrollOffset;
@@ -37,7 +36,7 @@ export class Feed implements Component {
 				const dir = f.direction === "in" ? cyan("◀ IN ") : yellow("▶ OUT");
 				const ts = (f.ts || "").slice(11, 19);
 				const pk = State.shortPk(f.peer);
-				const text = (f.text || "").replace(/\n/g, " ").slice(0, 200);
+				const text = (f.text || "").replace(/\n/g, " ");
 				lines.push(truncateToWidth(` ${ts} ${dir} [${pk}] ${text}`, width));
 			}
 			if (this.scrollOffset > 0) {

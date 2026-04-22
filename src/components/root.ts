@@ -255,7 +255,11 @@ export class Root implements Component {
 				this.feed.handleInput(data);
 				break;
 			case "chat":
-				this.chatInput.handleInput(data);
+				if (matchesKey(data, Key.up) || matchesKey(data, Key.down)) {
+					this.chatWindow.handleInput(data);
+				} else {
+					this.chatInput.handleInput(data);
+				}
 				break;
 		}
 		this.requestRender();
