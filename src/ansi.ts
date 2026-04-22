@@ -13,3 +13,4 @@ export const magenta = (t: string): string => fg(35, t);
 export const gray = (t: string): string => fg(90, t);
 export const bold = (t: string): string => `${BOLD}${t}${RESET}`;
 export const bgBlue = (t: string): string => `\x1b[44;37m${t}${RESET}`;
+export const underline = (t: string): string => `\x1b[4m${t}${RESET}`;

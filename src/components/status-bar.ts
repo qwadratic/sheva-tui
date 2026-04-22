@@ -9,7 +9,7 @@ export class StatusBar implements Component {
 	invalidate(): void {}
 
 	render(width: number): string[] {
-		const help = `${bold("Tab")}:focus ${bold("Enter")}:select ${bold("c")}:connect ${bold("r")}:room ${bold("d")}:disc ${bold("a")}:approve ${bold("R")}:refresh ${bold("q")}:quit`;
+		const help = `${bold("Tab")}:focus ${bold("Enter")}:select ${bold("c")}:connect ${bold("r")}:room ${bold("d")}:discoverable ${bold("a")}:approve ${bold("R")}:refresh ${bold("q")}:quit`;
 		return [
 			gray("─".repeat(width)),
 			truncateToWidth(` ${this.state.statusMsg}`, width),

@@ -11,6 +11,11 @@ const ORIGIN = "http://127.0.0.1:4200";
 const terminal = new ProcessTerminal();
 const tui = new TUI(terminal);
 
+function shutdown(): void {
+	tui.stop();
+	process.exit(0);
+}
+
 const rpcClient = new ShevaRpc({
 	url: WS_URL,
 	origin: ORIGIN,
@@ -32,7 +37,7 @@ const state = new State(rpcClient, () => {
 	tui.requestRender();
 });
 
-const root = new Root(state, terminal, () => tui.requestRender());
+const root = new Root(state, terminal, () => tui.requestRender(), shutdown);
 tui.addChild(root);
 tui.setFocus(root);
 tui.start();
@@ -42,5 +47,9 @@ tui.requestRender();
 setInterval(() => {
 	if (rpcClient.connected) state.refreshUptime();
 }, 30_000);
+
+// Clean exit on signals
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 rpcClient.connect();

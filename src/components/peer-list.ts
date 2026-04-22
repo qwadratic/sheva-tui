@@ -1,10 +1,11 @@
 import type { Component } from "@mariozechner/pi-tui";
 import { Key, matchesKey, truncateToWidth } from "@mariozechner/pi-tui";
-import { bgBlue, bold, gray, green, red, yellow } from "../ansi.js";
+import { bgBlue, bold, cyan, gray, green, red, yellow } from "../ansi.js";
 import { State } from "../state.js";
 
 export class PeerList implements Component {
 	selected = 0;
+	focused = false;
 	onSelectPeer?: (pubkey: string) => void;
 
 	constructor(private state: State) {}
@@ -14,8 +15,9 @@ export class PeerList implements Component {
 	render(width: number): string[] {
 		const { peers, pending } = this.state;
 		const lines: string[] = [];
+		const titleColor = this.focused ? cyan : gray;
 
-		lines.push(truncateToWidth(` ${bold("Peers")} (${peers.length})`, width));
+		lines.push(truncateToWidth(` ${titleColor(bold("▸ Peers"))} (${peers.length})`, width));
 		if (peers.length === 0) {
 			lines.push(truncateToWidth(gray("  No peers yet"), width));
 		} else {
@@ -24,15 +26,15 @@ export class PeerList implements Component {
 				const dot = p.online ? green("●") : red("○");
 				const trust =
 					p.trust === "trusted"
-						? green("T")
+						? green("trusted")
 						: p.trust === "blocked"
-							? red("B")
+							? red("blocked")
 							: p.trust === "seen"
-								? yellow("S")
-								: "?";
-				const prefix = i === this.selected ? bgBlue(">") : " ";
+								? yellow("seen")
+								: gray("unknown");
+				const prefix = i === this.selected && this.focused ? bgBlue(">") : i === this.selected ? ">" : " ";
 				const nick = i === this.selected ? bold(p.nick) : p.nick;
-				lines.push(truncateToWidth(`${prefix} ${dot} ${nick} [${trust}]`, width));
+				lines.push(truncateToWidth(`${prefix} ${dot} ${nick} ${trust}`, width));
 			}
 		}
 

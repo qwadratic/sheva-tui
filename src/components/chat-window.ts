@@ -21,6 +21,7 @@ export class ChatWindow implements Component {
 
 		if (!chatPeer) {
 			lines.push(truncateToWidth(gray("  Press Enter on a peer to open chat"), width));
+			lines.push(truncateToWidth(gray("  Rooms discover peers; chat is peer-to-peer"), width));
 			return lines;
 		}
 

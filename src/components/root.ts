@@ -1,6 +1,6 @@
 import type { Component, Terminal } from "@mariozechner/pi-tui";
 import { Input, Key, matchesKey, truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
-import { gray } from "../ansi.js";
+import { cyan, gray } from "../ansi.js";
 import type { State } from "../state.js";
 import { ApprovalOverlay } from "./approval-overlay.js";
 import { ChatWindow } from "./chat-window.js";
@@ -22,13 +22,16 @@ export class Root implements Component {
 	private focusTarget: FocusTarget = "peers";
 	private activeOverlay: Component | null = null;
 	private requestRender: () => void;
+	private stopTui: () => void;
 
 	constructor(
 		private state: State,
 		private terminal: Terminal,
 		requestRender: () => void,
+		stopTui: () => void,
 	) {
 		this.requestRender = requestRender;
+		this.stopTui = stopTui;
 		this.header = new Header(state);
 		this.peerList = new PeerList(state);
 		this.feed = new Feed(state);
@@ -76,11 +79,16 @@ export class Root implements Component {
 		this.feed.maxLines = Math.max(5, Math.floor(contentRows * 0.45));
 		this.chatWindow.maxLines = Math.max(5, Math.floor(contentRows * 0.35));
 
+		// Pass focus state to children
+		this.peerList.focused = this.focusTarget === "peers";
+
 		const leftLines = this.peerList.render(leftW);
 		const rightFeed = this.feed.render(rightW);
 		const rightChat = this.chatWindow.render(rightW);
 		const inputLines = this.chatInput.render(rightW - 4);
-		const inputRendered = inputLines.map((l) => truncateToWidth(` > ${l}`, rightW));
+		const chatFocused = this.focusTarget === "chat";
+		const prompt = chatFocused ? cyan("> ") : gray("> ");
+		const inputRendered = inputLines.map((l) => truncateToWidth(` ${prompt}${l}`, rightW));
 		const rightLines = [...rightFeed, ...rightChat, ...inputRendered];
 
 		// Merge columns
@@ -119,6 +127,7 @@ export class Root implements Component {
 
 		// Global quit
 		if (matchesKey(data, Key.ctrl("c")) || (this.focusTarget !== "chat" && data === "q")) {
+			this.stopTui();
 			process.exit(0);
 		}
 
