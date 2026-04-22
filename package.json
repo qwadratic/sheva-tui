@@ -1,0 +1,57 @@
+{
+	"name": "sheva-tui",
+	"version": "0.1.0",
+	"description": "Terminal UI for sheva-node — P2P mesh network observer",
+	"type": "module",
+	"bin": {
+		"sheva-tui": "dist/cli.js"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "tsc -p tsconfig.build.json",
+		"dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+		"lint": "biome check src/",
+		"format": "biome format --write src/",
+		"prepublishOnly": "npm run clean && npm run build"
+	},
+	"keywords": [
+		"sheva",
+		"p2p",
+		"tui",
+		"terminal",
+		"hyperswarm",
+		"mesh",
+		"layer2state"
+	],
+	"author": "Layer 2 State",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/niccolox/sheva-tui.git"
+	},
+	"engines": {
+		"node": ">=20.0.0"
+	},
+	"dependencies": {
+		"@mariozechner/pi-tui": "^0.68.0",
+		"ws": "^8.18.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.3.5",
+		"@types/node": "^22.0.0",
+		"@types/ws": "^8.5.0",
+		"typescript": "^5.8.0"
+	}
+}
