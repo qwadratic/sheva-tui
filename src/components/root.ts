@@ -62,7 +62,7 @@ export class Root implements Component {
 		};
 	}
 
-	private setStatus(msg: string): void {
+	setStatus(msg: string): void {
 		this.statusBar.setTempStatus(msg, () => this.requestRender());
 		this.requestRender();
 	}

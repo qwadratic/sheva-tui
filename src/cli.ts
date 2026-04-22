@@ -16,6 +16,8 @@ function shutdown(): void {
 	process.exit(0);
 }
 
+let root: Root | null = null;
+
 const rpcClient = new ShevaRpc({
 	url: WS_URL,
 	origin: ORIGIN,
@@ -23,8 +25,7 @@ const rpcClient = new ShevaRpc({
 		state.handleEvent(msg);
 	},
 	onConnect: () => {
-		state.statusMsg = `Connected to ${WS_URL}`;
-		tui.requestRender();
+		root?.setStatus(`Connected to ${rpcClient.getUrl()}`);
 		state.boot();
 	},
 	onDisconnect: () => {
@@ -37,7 +38,7 @@ const state = new State(rpcClient, () => {
 	tui.requestRender();
 });
 
-const root = new Root(state, terminal, rpcClient, () => tui.requestRender(), shutdown);
+root = new Root(state, terminal, rpcClient, () => tui.requestRender(), shutdown);
 tui.addChild(root);
 tui.setFocus(root);
 tui.start();
